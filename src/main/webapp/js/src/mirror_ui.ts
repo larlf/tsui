@@ -24,30 +24,39 @@ class UIManager
 
 class UIBus
 {
+	//等待刷新的队列
+	private static _queue: { [id: string]: UIElement } = {};
+
 	public static Init()
 	{
-		setInterval(UIBus.OnBeat, 1000/30);
+		setInterval(UIBus.OnBeat, 1000 / 30);
 	}
 
 	public static OnBeat()
 	{
-		
+
 	}
 }
 
 class UIElement
 {
 	protected _element: HTMLElement = null;
+	private static IDIndex=0;
+	private _id:string;
 	private _x: number = 0;
 	private _y: number = 0;
 	private _width: number = 0;
 	private _height: number = 0;
 
-	constructor()
+	constructor(id?:string)
 	{
+		if(id)
+			this._id=id;
+		else
+			this._id="ui_"+UIElement.IDIndex++;
 	}
 
-	protected refresh():void
+	protected refresh(): void
 	{
 
 	}
@@ -73,7 +82,7 @@ class UIElement
 
 class UIImage extends UIElement
 {
-	
+
 
 	constructor(src: string)
 	{
