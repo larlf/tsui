@@ -1,0 +1,60 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.bmuschko:gradle-tomcat-plugin:2.+'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'war'
+}
+
+apply plugin: 'com.bmuschko.tomcat'
+
+group = 'com.larlf.tsui'
+version = '0.0.1'
+sourceCompatibility = '1.8'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    providedCompile 'javax.servlet:servlet-api:2.5'
+    providedCompile 'javax.servlet:jsp-api:2.0'
+
+    compile 'org.apache.commons:commons-math3:3.6.1'
+    compile 'commons-collections:commons-collections:3.+'
+    compile 'commons-beanutils:commons-beanutils:1.+'
+    compile 'org.apache.commons:commons-lang3:3.+'
+    compile 'commons-logging:commons-logging:1.+'
+    compile 'log4j:log4j:1.+'
+
+    implementation 'com.google.guava:guava:27.0.1-jre'
+
+    testImplementation 'junit:junit:4.12'
+
+    def tomcatVersion = '8.+'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+    "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
+    "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+}
+
+tomcat {
+    httpPort = 80
+    contextPath = '/'
+    httpProtocol = 'org.apache.coyote.http11.Http11Nio2Protocol'
+    ajpProtocol = 'org.apache.coyote.ajp.AjpNio2Protocol'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+
+
