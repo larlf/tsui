@@ -1,0 +1,21 @@
+apply plugin: 'com.bmuschko.tomcat'
+
+group = 'com.larlf.tsui'
+version = '0.0.1'
+sourceCompatibility = '1.8'
+
+dependencies {
+    def tomcatVersion = '8.+'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+    "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
+    "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+}
+
+tomcat {
+    httpPort = 80
+    ajpPort = 18009
+    stopPort = 18081
+    contextPath = '/'
+    httpProtocol = 'org.apache.coyote.http11.Http11Nio2Protocol'
+    ajpProtocol = 'org.apache.coyote.ajp.AjpNio2Protocol'
+}
