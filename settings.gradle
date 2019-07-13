@@ -1,2 +1,2 @@
 rootProject.name = 'tsui'
-include 'web'
+include 'larlf','web'

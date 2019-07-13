@@ -1,0 +1,17 @@
+<!ENTITY % boolean "(true|false|yes|no)">
+<!--
+-->
+<!ELEMENT resource (module*)>
+<!ATTLIST resource>
+<!--
+-->
+<!ELEMENT module (msg*)>
+<!ATTLIST module
+	lang CDATA #REQUIRED
+>
+<!--
+-->
+<!ELEMENT msg (#PCDATA)>
+<!ATTLIST msg
+	name CDATA #REQUIRED
+>

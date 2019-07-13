@@ -1,3 +1,4 @@
+apply plugin: 'war'
 apply plugin: 'com.bmuschko.tomcat'
 
 group = 'com.larlf.tsui'
