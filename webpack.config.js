@@ -1,7 +1,7 @@
 const path = require("path");
 const webpack = require("webpack");
 
-var jsPath = path.resolve(__dirname, "src/main/webapp/js");
+var jsPath = path.resolve(__dirname, "web/src/main/webapp/js");
 
 const config = {
 	entry: {

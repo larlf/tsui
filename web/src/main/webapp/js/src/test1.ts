@@ -1,19 +1,11 @@
 import jQuery from 'jquery';
-import * as mirror from './mirror_ui'
+import * as tsui from './tsui'
 
-jQuery(document).ready((el)=>{
+jQuery(document).ready((el) =>
+{
+	tsui.UIManager.Init();
 
-	document.body.style.position="absolute";
-	document.body.style.width="100%";
-	document.body.style.height="100%";
-
-	console.log(document.documentElement.clientWidth);
-	console.log(document.documentElement.clientHeight);
-
-	let img=new mirror.UIImage("img/logo1.png");
-	img.x=100;
-	img.y=100;
-
-	mirror.UIManager.Init();
+	let cols = new tsui.CowContainer(30, 70);
+	tsui.stage.addChild(cols);
 });
 
