@@ -109,15 +109,27 @@ class UINode
 {
 	private static IDIndex = 0;
 
-	private _id: string;
-	private _parent: UINode;
-	private _childNodes: UINode[] = [];
+	protected _id: string;
+	protected _parent: UINode;
+	protected _childNodes: UINode[] = [];
+	protected _x: number = 0;
+	protected _y: number = 0;
+	protected _width: number = 0;
+	protected _height: number = 0;
 
 	public get id(): string { return this._id; }
-	public get width(): number { return 0; }
-	public get height(): number { return 0; }
 	public get parent(): UINode { return this._parent; }
-	public set parent(node: UINode) { this._parent = node; }
+	public get x(): number { return this._x; }
+	public set x(v: number) { this._x = v; }
+
+	public get y(): number { return this._y; }
+	public set y(v: number) { this._y = v; }
+
+	public get width(): number { return this._width; }
+	public set width(v: number) { this._width = v; }
+
+	public get height(): number { return this._height; }
+	public set height(v: number) { this._height = v; }
 
 	public constructor()
 	{
@@ -126,6 +138,8 @@ class UINode
 		//创建的时候就认为要渲染
 		UIBus.addRenderNode(this);
 	}
+
+	protected setParent(node: UINode) { this._parent = node; }
 
 	public render(): void
 	{
@@ -143,7 +157,7 @@ class UINode
 
 	public addChild(node: UINode)
 	{
-		node.parent = this;
+		node.setParent(this);
 		this._childNodes.push(node);
 	}
 }
@@ -151,11 +165,6 @@ class UINode
 class UIElement extends UINode
 {
 	protected _element: HTMLElement = null;
-
-	private _x: number = 0;
-	private _y: number = 0;
-	private _width: number = 0;
-	private _height: number = 0;
 
 	constructor(element: HTMLElement)
 	{
@@ -165,42 +174,22 @@ class UIElement extends UINode
 
 	public get element(): HTMLElement { return this._element; }
 
-	public get x(): number { return this._x; }
-	public set x(v: number)
+	public render()
 	{
-		this._x = v;
-		if (this._element)
-			this._element.style.left = v.toString() + "px";
-	}
+		super.render();
 
-	public get y(): number { return this._y; }
-	public set y(v: number)
-	{
-		this._y = v;
-		if (this._element)
-			this._element.style.top = v.toString() + "px";
-	}
-
-	public get width(): number { return this._width; }
-	public set width(v: number)
-	{
-		this._width = v;
-		if (this._element)
-			this._element.style.width = v + "px";
-	}
-
-	public get height(): number { return this._height; }
-	public set height(v: number)
-	{
-		this._height = v;
-		if (this._element)
-			this._element.style.height = v + "px";
+		this._childNodes.forEach(it =>
+		{
+			if (it && it instanceof UIElement)
+			{
+				this._element.appendChild((it as UIElement).element);
+			}
+		});
 	}
 }
 
 export class CowContainer extends UINode
 {
-	public cols: number[] = [];
 	private _eles: ColItem[] = [];
 
 	constructor(...args: number[])
@@ -212,7 +201,7 @@ export class CowContainer extends UINode
 			let self = this;
 			args.forEach(it =>
 			{
-				self.cols.push(it);
+				self._eles.push(new ColItem(it));
 			});
 		}
 	}
@@ -220,46 +209,65 @@ export class CowContainer extends UINode
 	public render()
 	{
 		let x = 0;
-		for (let i = 0; i < this.cols.length; ++i)
+		for (let i = 0; i < this._eles.length; ++i)
 		{
-			if (!this._eles[i])
-			{
-				let ele = new ColItem();
-				this._eles[i] = ele;
-				(this.parent as UIElement).element.appendChild(this._eles[i].element);
-			}
-
-			let width = Math.round(this.parent.width * this.cols[i] / 100);
+			let width = Math.round(this.parent.width * this._eles[i].widthVal / 100);
 			this._eles[i].width = width;
 			this._eles[i].x = x;
 			this._eles[i].height = Math.round(this.parent.height);
 			x += width;
+			this._eles[i].render();
 		}
 
 		super.render();
+	}
+
+	public getItem(n: number): ColItem
+	{
+		return this._eles[n];
 	}
 }
 
 export class ColItem extends UIElement
 {
-	constructor()
+	public widthVal: number;
+
+	constructor(widthVal: number)
 	{
 		super(document.createElement("div"));
+		this.widthVal = widthVal;
 		this.element.style.position = "absolute";
+		this._element.id = this.id;
 	}
 
 	public render()
 	{
+		this._childNodes.forEach(it =>
+		{
+			if (it)
+			{
+				this._element.appendChild((it as UIElement).element);
+			}
+		});
 
+		super.render();
 	}
 }
 
-export class ScrollContainer extends UINode
+export class ScrollContainer extends UIElement
 {
+	constructor()
+	{
+		super(document.createElement("div"));
+	}
 
+	public render()
+	{
+		this.element.style.overflow = "scroll";
+		this.width = this._parent.width;
+		this.height = this._parent.height;
+	}
 }
-
-
 
 /**
  * 舞台

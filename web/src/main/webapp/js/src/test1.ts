@@ -7,5 +7,8 @@ jQuery(document).ready((el) =>
 
 	let cols = new tsui.CowContainer(30, 70);
 	tsui.stage.addChild(cols);
+
+	let area1 = new tsui.ScrollContainer();
+	cols.getItem(0).addChild(area1);
 });
 
