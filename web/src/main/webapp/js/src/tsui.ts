@@ -1,41 +1,48 @@
 import jq from 'jquery';
 
-class Handler
+/**
+ * 所有对象的基类
+ */
+class Object
 {
-	private static IDIndex = 0;
+	private static _Index = 0;
 
-	private _id: string;
+	private _hashCode: number;
+	public get hashCode(): number { return this._hashCode; }
+
+	constructor()
+	{
+		this._hashCode = Object._Index++;
+	}
+}
+
+/**
+ * 对回调的封装
+ */
+class Handler extends Object
+{
 	thisObj: any;
 	callback: Function
 	once: boolean;
 
-	public get id(): string { return this._id; }
-
 	public constructor(thisObj: any, callback: Function, once?: boolean)
 	{
-		this._id = "event_" + Handler.IDIndex++;
+		super();
 		this.thisObj = thisObj;
 		this.callback = callback;
 		this.once = once;
 	}
 
-	public execute(...args: any[]): boolean
+	public execute(...args: any[])
 	{
 		if (this.callback)
 		{
-			let r = this.callback.apply(this.thisObj, args);
-			if (this.once)
-			{
-				this.callback = null;
-				return false;
-			}
-
-			return r;
+			this.callback.apply(this.thisObj, args);
 		}
-
-		return false;
 	}
 }
+
+
 
 export class UIManager
 {
@@ -114,29 +121,27 @@ class UINode
 	protected _childNodes: UINode[] = [];
 	protected _x: number = 0;
 	protected _y: number = 0;
-	protected _width: number = 0;
-	protected _height: number = 0;
+	protected _width: number = 100;
+	protected _height: number = 100;
+	protected _element: HTMLElement = null;
 
 	public get id(): string { return this._id; }
 	public get parent(): UINode { return this._parent; }
+
+	public get element(): HTMLElement { return this._element; }
+	public get parentElement(): HTMLElement { return this._parent ? this._parent.element : null; }
 	public get x(): number { return this._x; }
 	public set x(v: number) { this._x = v; }
-
 	public get y(): number { return this._y; }
 	public set y(v: number) { this._y = v; }
-
 	public get width(): number { return this._width; }
 	public set width(v: number) { this._width = v; }
-
 	public get height(): number { return this._height; }
 	public set height(v: number) { this._height = v; }
 
 	public constructor()
 	{
 		this._id = "ui_" + UINode.IDIndex++;
-
-		//创建的时候就认为要渲染
-		UIBus.addRenderNode(this);
 	}
 
 	protected setParent(node: UINode) { this._parent = node; }
@@ -162,36 +167,24 @@ class UINode
 	}
 }
 
-class UIElement extends UINode
+/**
+ * 舞台
+ */
+export class UIStage extends UINode
 {
-	protected _element: HTMLElement = null;
-
-	constructor(element: HTMLElement)
+	constructor()
 	{
 		super();
-		this._element = element;
+		this._element = document.documentElement;
+		UIBus.addRenderNode(this);
 	}
 
-	public get element(): HTMLElement { return this._element; }
-
-	public render()
-	{
-		super.render();
-
-		this._childNodes.forEach(it =>
-		{
-			if (it && it instanceof UIElement)
-			{
-				this._element.appendChild((it as UIElement).element);
-			}
-		});
-	}
+	public get width(): number { return document.documentElement.clientWidth; }
+	public get height(): number { return document.documentElement.clientHeight; }
 }
 
 export class CowContainer extends UINode
 {
-	private _eles: ColItem[] = [];
-
 	constructor(...args: number[])
 	{
 		super();
@@ -201,22 +194,27 @@ export class CowContainer extends UINode
 			let self = this;
 			args.forEach(it =>
 			{
-				self._eles.push(new ColItem(it));
+				self.addChild(new ColItem(it));
 			});
 		}
 	}
 
 	public render()
 	{
+		if (this._parent)
+			this._element = this._parent.element;
+		else
+			this._element = null;
+
 		let x = 0;
-		for (let i = 0; i < this._eles.length; ++i)
+		for (let i = 0; i < this._childNodes.length; ++i)
 		{
-			let width = Math.round(this.parent.width * this._eles[i].widthVal / 100);
-			this._eles[i].width = width;
-			this._eles[i].x = x;
-			this._eles[i].height = Math.round(this.parent.height);
+			let node: ColItem = this._childNodes[i] as ColItem;
+			let width = Math.round(this.parent.width * node.widthVal / 100);
+			this._childNodes[i].x = x;
+			this._childNodes[i].width = width;
+			this._childNodes[i].height = Math.round(this.parent.height);
 			x += width;
-			this._eles[i].render();
 		}
 
 		super.render();
@@ -224,17 +222,18 @@ export class CowContainer extends UINode
 
 	public getItem(n: number): ColItem
 	{
-		return this._eles[n];
+		return this._childNodes[n] as ColItem;
 	}
 }
 
-export class ColItem extends UIElement
+export class ColItem extends UINode
 {
 	public widthVal: number;
 
 	constructor(widthVal: number)
 	{
-		super(document.createElement("div"));
+		super();
+		this._element = document.createElement("div");
 		this.widthVal = widthVal;
 		this.element.style.position = "absolute";
 		this._element.id = this.id;
@@ -242,55 +241,53 @@ export class ColItem extends UIElement
 
 	public render()
 	{
-		this._childNodes.forEach(it =>
+		if (this._parent)
 		{
-			if (it)
-			{
-				this._element.appendChild((it as UIElement).element);
-			}
-		});
+			this._parent.element.appendChild(this._element);
+		}
+
+		this._element.style.width = this._width + "px";
+		this._element.style.height = this._height + "px";
+		this._element.style.left = this._x + "px";
+		this._element.style.top = this._y + "px";
 
 		super.render();
 	}
 }
 
-export class ScrollContainer extends UIElement
+export class ScrollContainer extends UINode
 {
 	constructor()
 	{
-		super(document.createElement("div"));
+		super();
+		this._element = document.createElement("div");
+		this._element.id = this.id;
 	}
 
 	public render()
 	{
+		if (this._parent)
+			this._parent.element.appendChild(this._element);
+
 		this.element.style.overflow = "scroll";
-		this.width = this._parent.width;
-		this.height = this._parent.height;
+		this._element.style.width = this._parent.width + "px";
+		this._element.style.height = this._parent.height + "px";
+		this._width = this._element.scrollWidth;
+		this._height = this._element.scrollHeight;
+		console.log(this.width, this.height);
+
+		super.render();
 	}
 }
 
-/**
- * 舞台
- */
-export class UIStage extends UIElement
-{
-	constructor()
-	{
-		super(null);
-		this._element = document.documentElement;
-	}
-
-	public get width(): number { return document.documentElement.clientWidth; }
-	public get height(): number { return document.documentElement.clientHeight; }
-}
-
-export class UIImage extends UIElement
+export class UIImage extends UINode
 {
 	get img(): HTMLImageElement { return this._element as HTMLImageElement; }
 
 	constructor(src: string)
 	{
-		super(new Image);
+		super();
+		this._element = new Image;
 		this.img.src = src;
 		this.img.style.position = "absolute";
 		this.img.style.top = "0";
